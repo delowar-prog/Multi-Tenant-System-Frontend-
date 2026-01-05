@@ -1,0 +1,72 @@
+@config "../../tailwind.config.js";
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes theme-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.theme-spin {
+  animation: theme-spin 450ms ease-in-out;
+}
+
+@keyframes profile-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-reveal {
+  animation: profile-reveal 520ms ease-out both;
+}
+
+.profile-stagger-1 {
+  animation-delay: 0ms;
+}
+
+.profile-stagger-2 {
+  animation-delay: 120ms;
+}
+
+.profile-stagger-3 {
+  animation-delay: 240ms;
+}
+
+.profile-stagger-4 {
+  animation-delay: 360ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-reveal {
+    animation: none;
+  }
+}
