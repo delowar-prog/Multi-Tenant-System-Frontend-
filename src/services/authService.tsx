@@ -53,6 +53,43 @@ export async function login(email: string, password: string) {
 }
 
 // =========================
+// FORGOT PASSWORD
+// =========================
+export async function requestPasswordReset(email: string) {
+  const response = await api.post("/forgot-password", { email });
+  return response.data;
+}
+
+// =========================
+// RESET PASSWORD
+// =========================
+type ResetPasswordPayload = {
+  email: string;
+  token: string;
+  password: string;
+  password_confirmation: string;
+};
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  const response = await api.post("/reset-password", payload);
+  return response.data;
+}
+
+// =========================
+// CHANGE PASSWORD
+// =========================
+type ChangePasswordPayload = {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+};
+
+export async function changePassword(payload: ChangePasswordPayload) {
+  const response = await api.post("/change-password", payload);
+  return response.data;
+}
+
+// =========================
 // LOGOUT
 // =========================
 export async function logout() {

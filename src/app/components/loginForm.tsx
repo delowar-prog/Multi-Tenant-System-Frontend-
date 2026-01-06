@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "src/context/authContext";
 import { login } from "src/services/authService";
+import Link from "next/link";
 
 export default function LoginForm() {
   const { setUser } = useAuth();
@@ -51,9 +52,14 @@ export default function LoginForm() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
+          <div className="mb-1 flex items-center justify-between">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <Link href="/forgot-password" className="text-xs font-medium text-blue-600 hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"

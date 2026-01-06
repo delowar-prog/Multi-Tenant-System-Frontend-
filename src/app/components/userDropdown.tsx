@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, User } from "lucide-react";
+import { ChevronDown, LifeBuoy, Settings, User } from "lucide-react";
 import { useAuth } from "src/context/authContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -56,13 +56,17 @@ export default function UserDropdown() {
               </Link>
             </li>
             <li>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-50">
-                Account settings
-              </button>
+              <Link
+                href="/account-settings"
+                onClick={() => setOpen(false)}
+                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <Settings size={16} /> Account settings
+              </Link>
             </li>
             <li>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-50">
-                Support
+              <button type="button" className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">
+                <LifeBuoy size={16} /> Support
               </button>
             </li>
           </ul>

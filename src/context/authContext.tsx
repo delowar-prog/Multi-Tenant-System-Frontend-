@@ -40,7 +40,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password";
 
   useEffect(() => {
     const storedUser = getUser();
