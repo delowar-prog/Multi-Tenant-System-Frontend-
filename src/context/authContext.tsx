@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   const isAuthPage =
+    pathname === "/" ||
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/forgot-password" ||
@@ -88,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     (async () => {
       try {
-         const res = await api.get<MeResponse>("/me"); // token/cookie configured
+        const res = await api.get<MeResponse>("/me"); // token/cookie configured
         setMe(res.data);
         console.log(res.data.permissions);
       } finally {
@@ -102,14 +103,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     () => new Set(me?.permissions ?? user?.permissions ?? []),
     [me, user]
   );
-  const can = (permission: string): boolean =>
-    permissionSet.has(permission);
+  const can = (permission: string): boolean => {
+  const currentUser = me ?? user;
+
+  // 🔥 Super Admin → সব permission allow
+  if (currentUser?.is_super_admin) {
+    return true;
+  }
+
+  // ❌ permission না থাকলে deny
+  if (!permission) {
+    return false;
+  }
+
+  // ⛔ always boolean return
+  return Boolean(
+    currentUser &&
+    Array.isArray(currentUser.permissions) &&
+    currentUser.permissions.includes(permission)
+  );
+};
+
+
 
   const canAny = (permissions: string[]): boolean =>
     permissions.some((p) => permissionSet.has(p));
 
   return (
-    <AuthContext.Provider value={{user, setUser, me, loading, can, canAny, handleLogout, }}>
+    <AuthContext.Provider value={{ user, setUser, me, loading, can, canAny, handleLogout, }}>
       {children}
     </AuthContext.Provider>
   );

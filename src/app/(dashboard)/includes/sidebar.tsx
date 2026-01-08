@@ -98,7 +98,7 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
         </div>
 
         <Group title="User Management" icon="users" isOpenKey="userMgmt">
-          {can("manage_users",) && (
+          {can("manage_users") && (
             <LinkItem icon="dot" label="Users" href="/user" />
           )}
           {can("manage_permissions",) && (
