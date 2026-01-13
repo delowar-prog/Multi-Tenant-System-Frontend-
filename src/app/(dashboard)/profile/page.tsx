@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ElementType } from "react";
-import { Building2, KeyRound, Mail, MapPin, Phone, ShieldCheck, Users } from "lucide-react";
+import { Building2, CreditCard, KeyRound, Mail, MapPin, Phone, ShieldCheck, Users } from "lucide-react";
+import { fetchLandingPlans, LandingPlanApi } from "src/services/planServices";
 import { fetchProfile } from "src/services/profileServices";
-import type { ProfileResponse } from "src/services/profileServices";
+import type { ProfilePlan, ProfileResponse } from "src/services/profileServices";
 
 type InfoRowProps = {
   icon: ElementType<{ className?: string }>;
@@ -64,6 +65,8 @@ const StatCard = ({ icon: Icon, label, value }: StatCardProps) => (
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [planDetails, setPlanDetails] = useState<LandingPlanApi | ProfilePlan | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,6 +85,87 @@ export default function ProfilePage() {
 
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    const embeddedPlan = profile.plan ?? profile.user?.plan ?? null;
+    if (embeddedPlan) {
+      setPlanDetails(embeddedPlan);
+      return;
+    }
+
+    const planId = profile.user?.plan_id;
+    if (!planId) {
+      setPlanDetails(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadPlan = async () => {
+      try {
+        setPlanLoading(true);
+        const plans = await fetchLandingPlans();
+        const match = plans.find((plan) => plan.id === planId) ?? null;
+
+        if (isMounted) {
+          setPlanDetails(match);
+        }
+      } catch (err) {
+        console.error("Profile plan fetch error:", err);
+        if (isMounted) {
+          setPlanDetails(null);
+        }
+      } finally {
+        if (isMounted) {
+          setPlanLoading(false);
+        }
+      }
+    };
+
+    loadPlan();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile]);
+
+  const formatPlanPrice = (price: LandingPlanApi["price"]) => {
+    const numeric = typeof price === "number" ? price : Number(price);
+
+    if (Number.isFinite(numeric)) {
+      if (numeric === 0) {
+        return "Free";
+      }
+
+      return `BDT ${numeric.toFixed(2)}`;
+    }
+
+    if (typeof price === "string" && price.trim().length > 0) {
+      return price;
+    }
+
+    return "Custom";
+  };
+
+  const formatPlanCycle = (days?: number) => {
+    if (!days) {
+      return "";
+    }
+
+    if (days === 30) {
+      return "/month";
+    }
+
+    if (days === 365) {
+      return "/year";
+    }
+
+    return `/${days} days`;
+  };
 
   const initials = useMemo(() => {
     if (!profile?.user?.name) return "U";
@@ -123,6 +207,25 @@ export default function ProfilePage() {
   const isSuperAdmin = Number(user.is_super_admin) === 1;
   const roleCount = roles.length;
   const permissionCount = permissions.length;
+  const planId = planDetails?.id ?? profile.plan?.id ?? user.plan?.id ?? user.plan_id ?? null;
+  const planLabel = (() => {
+    if (planDetails) {
+      const priceLabel = formatPlanPrice(planDetails.price);
+      const cycleLabel = formatPlanCycle(planDetails.duration_days);
+      const cycle = cycleLabel ? ` ${cycleLabel}` : "";
+      return `${planDetails.name} - ${priceLabel}${cycle}`;
+    }
+
+    if (planLoading) {
+      return "Loading plan...";
+    }
+
+    if (planId) {
+      return `Plan #${planId}`;
+    }
+
+    return "Not set";
+  })();
 
   return (
     <div className="space-y-6">
@@ -180,6 +283,7 @@ export default function ProfilePage() {
             <InfoRow icon={Phone} label="Phone" value={user.phone ?? "Not set"} href={user.phone ? `tel:${user.phone}` : undefined} />
             <InfoRow icon={MapPin} label="Address" value={user.address ?? "Not set"} />
             <InfoRow icon={Building2} label="Tenant ID" value={user.tenant_id ?? "N/A"} />
+            <InfoRow icon={CreditCard} label="Plan" value={planLabel} />
           </div>
         </section>
 

@@ -12,6 +12,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { fetchLandingPlans, LandingPlanApi } from "src/services/planServices";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -68,41 +69,6 @@ const slides = [
   },
 ];
 
-const plans = [
-  {
-    name: "Starter",
-    price: "$39",
-    cycle: "/month",
-    tagline: "For small teams piloting multi-tenant access.",
-    features: ["Up to 5 tenants", "Standard RBAC", "Email support", "Audit log (7 days)"],
-  },
-  {
-    name: "Growth",
-    price: "$89",
-    cycle: "/month",
-    tagline: "For scaling teams that need advanced control.",
-    features: [
-      "Unlimited tenants",
-      "Advanced RBAC",
-      "Policy automation",
-      "Audit log (90 days)",
-    ],
-    highlighted: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    cycle: "",
-    tagline: "For regulated orgs with bespoke workflows.",
-    features: [
-      "Dedicated success team",
-      "Custom integrations",
-      "Private cloud",
-      "Audit log (365 days)",
-    ],
-  },
-];
-
 const projects = [
   {
     name: "University Suite",
@@ -144,8 +110,126 @@ const testimonials = [
   },
 ];
 
+interface LandingPlanFeatures {
+  users?: number;
+  support?: string;
+  branding?: boolean;
+  storage_mb?: number;
+  custom_domain?: boolean;
+}
+
+const planTaglines: Record<string, string> = {
+  free: "Start with essential access controls at zero cost.",
+  basic: "For growing teams that need consistent governance.",
+  pro: "Advanced coverage for high-trust operations.",
+};
+
+const parsePlanFeatures = (
+  features: LandingPlanApi["features"],
+): LandingPlanFeatures | null => {
+  if (!features) {
+    return null;
+  }
+
+  if (typeof features === "string") {
+    try {
+      return JSON.parse(features) as LandingPlanFeatures;
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof features === "object") {
+    return features as LandingPlanFeatures;
+  }
+
+  return null;
+};
+
+const formatPlanPrice = (price: LandingPlanApi["price"]) => {
+  const numeric = typeof price === "number" ? price : Number(price);
+
+  if (Number.isFinite(numeric)) {
+    if (numeric === 0) {
+      return "Free";
+    }
+
+    return `BDT ${numeric.toFixed(2)}`;
+  }
+
+  if (typeof price === "string" && price.trim().length > 0) {
+    return price;
+  }
+
+  return "Custom";
+};
+
+const formatPlanCycle = (days?: number) => {
+  if (!days) {
+    return "";
+  }
+
+  if (days === 30) {
+    return "/month";
+  }
+
+  if (days === 365) {
+    return "/year";
+  }
+
+  return `/${days} days`;
+};
+
+const buildPlanFeatures = (features: LandingPlanFeatures | null) => {
+  if (!features) {
+    return [];
+  }
+
+  const lines: string[] = [];
+
+  if (typeof features.users === "number") {
+    lines.push(`${features.users} users`);
+  }
+
+  if (typeof features.storage_mb === "number") {
+    lines.push(`${features.storage_mb} MB storage`);
+  }
+
+  if (features.support) {
+    lines.push(`${features.support} support`);
+  }
+
+  if (typeof features.branding === "boolean") {
+    lines.push(features.branding ? "Branding included" : "No branding");
+  }
+
+  if (typeof features.custom_domain === "boolean") {
+    lines.push(features.custom_domain ? "Custom domain" : "No custom domain");
+  }
+
+  return lines;
+};
+
+const buildPlanTagline = (planName: string, features: LandingPlanFeatures | null) => {
+  const key = planName.trim().toLowerCase();
+  const preset = planTaglines[key];
+
+  if (preset) {
+    return preset;
+  }
+
+  const userLabel =
+    typeof features?.users === "number" ? `${features.users} users` : "growing teams";
+  const supportLabel = features?.support ? `${features.support} support` : "reliable support";
+
+  return `Built for ${userLabel} with ${supportLabel}.`;
+};
+
 export default function LandingPage() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [plans, setPlans] = useState<LandingPlanApi[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [plansError, setPlansError] = useState<string | null>(null);
   const slideCount = slides.length;
 
   useEffect(() => {
@@ -156,7 +240,42 @@ export default function LandingPage() {
     return () => clearInterval(id);
   }, [slideCount]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPlans = async () => {
+      try {
+        setPlansLoading(true);
+        setPlansError(null);
+        const data = await fetchLandingPlans();
+
+        if (isMounted) {
+          setPlans(data);
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "An error occurred while fetching plans";
+        console.error("Landing plan fetch error:", err);
+
+        if (isMounted) {
+          setPlansError(errorMessage);
+        }
+      } finally {
+        if (isMounted) {
+          setPlansLoading(false);
+        }
+      }
+    };
+
+    loadPlans();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const activeSlide = slides[activeIndex];
+  const hasBasicPlan = plans.some((plan) => plan.name.toLowerCase() === "basic");
 
   return (
     <div className={`${manrope.className} min-h-screen bg-[#F4F8F2] text-slate-900`}>
@@ -323,55 +442,84 @@ export default function LandingPage() {
                   Pricing that scales with your tenants
                 </h2>
               </div>
-              <p className="max-w-md text-sm text-slate-600">
-                Select a plan that mirrors your governance maturity. Upgrade any time as your teams grow.
-              </p>
+        
             </div>
 
-            <div className="mt-8 grid gap-6 lg:grid-cols-3">
-              {plans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`profile-reveal rounded-3xl border p-6 shadow-sm transition ${
-                    plan.highlighted
-                      ? "border-emerald-300 bg-white shadow-lg"
-                      : "border-slate-200 bg-white/80"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className={`${sora.className} text-xl font-semibold text-slate-900`}>{plan.name}</h3>
-                    {plan.highlighted && (
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        Popular
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-3 text-3xl font-semibold text-slate-900">
-                    {plan.price}
-                    <span className="text-sm font-medium text-slate-500">{plan.cycle}</span>
-                  </p>
-                  <p className="mt-2 text-sm text-slate-600">{plan.tagline}</p>
-                  <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    className={`mt-6 w-full rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      plan.highlighted
-                        ? "bg-emerald-600 text-white hover:bg-emerald-500"
-                        : "border border-slate-200 text-slate-700 hover:border-slate-300"
-                    }`}
-                  >
-                    Choose {plan.name}
-                  </button>
-                </div>
-              ))}
-            </div>
+            {plansLoading ? (
+              <div className="profile-reveal mt-8 rounded-3xl border border-emerald-100 bg-white/80 p-6 text-sm text-slate-600">
+                Loading plans...
+              </div>
+            ) : plansError ? (
+              <div className="profile-reveal mt-8 rounded-3xl border border-rose-200 bg-white/80 p-6 text-sm text-rose-600">
+                Unable to load plans right now.
+              </div>
+            ) : plans.length === 0 ? (
+              <div className="profile-reveal mt-8 rounded-3xl border border-emerald-100 bg-white/80 p-6 text-sm text-slate-600">
+                No plans available yet.
+              </div>
+            ) : (
+              <div className="mt-8 grid gap-6 lg:grid-cols-3">
+                {plans.map((plan, index) => {
+                  const features = parsePlanFeatures(plan.features);
+                  const featureList = buildPlanFeatures(features);
+                  const priceLabel = formatPlanPrice(plan.price);
+                  const cycleLabel = formatPlanCycle(plan.duration_days);
+                  const isHighlighted = hasBasicPlan
+                    ? plan.name.toLowerCase() === "basic"
+                    : plans.length > 2 && index === 1;
+                  const tagline = buildPlanTagline(plan.name, features);
+
+                  return (
+                    <div
+                      key={plan.id}
+                      className={`profile-reveal rounded-3xl border p-6 shadow-sm transition ${
+                        isHighlighted
+                          ? "border-emerald-300 bg-white shadow-lg"
+                          : "border-slate-200 bg-white/80"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className={`${sora.className} text-xl font-semibold text-slate-900`}>{plan.name}</h3>
+                        {isHighlighted && (
+                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                            Popular
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-3 text-3xl font-semibold text-slate-900">
+                        {priceLabel}
+                        {cycleLabel && (
+                          <span className="text-sm font-medium text-slate-500">{cycleLabel}</span>
+                        )}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-600">{tagline}</p>
+                      {featureList.length > 0 ? (
+                        <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                          {featureList.map((feature) => (
+                            <li key={feature} className="flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-4 text-sm text-slate-600">Feature details coming soon.</p>
+                      )}
+                      <Link
+                        href={`/register?plan_id=${plan.id}`}
+                        className={`mt-6 inline-flex w-full items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          isHighlighted
+                            ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                            : "border border-slate-200 text-slate-700 hover:border-slate-300"
+                        }`}
+                      >
+                        Choose {plan.name}
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 

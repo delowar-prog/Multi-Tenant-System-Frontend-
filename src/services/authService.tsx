@@ -7,6 +7,7 @@ interface registerPayload {
   password: string,
   phone: string,
   address: string,
+  plan_id: number,
 }
 
 export const register = async (payload: registerPayload) => {
