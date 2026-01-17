@@ -104,30 +104,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [me, user]
   );
   const can = (permission: string): boolean => {
-  const currentUser = me ?? user;
+    const currentUser = me ?? user;
 
-  // 🔥 Super Admin → সব permission allow
-  if (currentUser?.is_super_admin) {
-    return true;
-  }
+    // 🔥 Super Admin → সব permission allow
+    if (currentUser?.is_super_admin) {
+      return true;
+    }
 
-  // ❌ permission না থাকলে deny
-  if (!permission) {
-    return false;
-  }
+    // ❌ permission না থাকলে deny
+    if (!permission) {
+      return false;
+    }
 
-  // ⛔ always boolean return
-  return Boolean(
-    currentUser &&
-    Array.isArray(currentUser.permissions) &&
-    currentUser.permissions.includes(permission)
-  );
-};
+    // ⛔ always boolean return
+    return Boolean(
+      currentUser &&
+      Array.isArray(currentUser.permissions) &&
+      currentUser.permissions.includes(permission)
+    );
+  };
 
 
+  // MULTIPLE permission check (any)
+  const canAny = (permissions: string[]): boolean => {
+    const currentUser = me ?? user;
 
-  const canAny = (permissions: string[]): boolean =>
-    permissions.some((p) => permissionSet.has(p));
+    if (currentUser?.is_super_admin) return true;
+    if (!Array.isArray(permissions) || permissions.length === 0) return false;
+
+    return permissions.some((p) => permissionSet.has(p));
+  };
 
   return (
     <AuthContext.Provider value={{ user, setUser, me, loading, can, canAny, handleLogout, }}>

@@ -98,13 +98,13 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
         </div>
 
         <Group title="User Management" icon="users" isOpenKey="userMgmt">
-          {can("manage_users") && (
+          {canAny(["manage-users","view-users"]) && (
             <LinkItem icon="dot" label="Users" href="/user" />
           )}
-          {can("manage_permissions",) && (
+          {can("view-permissions",) && (
             <LinkItem icon="dot" label="Permissions" href="/permission" />
           )}
-          {can("manage_roles",) && (
+          {canAny(["manage-roles","view-roles"]) && (
             <LinkItem icon="dot" label="Roles" href="/role" />
           )}
         </Group>

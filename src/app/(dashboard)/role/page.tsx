@@ -17,16 +17,23 @@ interface Permission {
 
 type ApiPermission = Permission | PermissionId | { id?: PermissionId; name?: string };
 
+interface Tenant {
+  id: string;
+  name: string;
+}
+
 interface Role {
   id: number;
   name: string;
   permissions: PermissionId[];
+  tenant?: Tenant | null;
 }
 
 interface ApiRole {
   id: number;
   name: string;
   permissions: ApiPermission[];
+  tenant?: Tenant | null;
 }
 
 interface PaginationLink {
@@ -38,7 +45,7 @@ interface PaginationLink {
 
 interface ApiResponse {
   current_page: number;
-  data: Permission[];
+  data: ApiRole[];
   first_page_url: string;
   from: number;
   last_page: number;
@@ -119,9 +126,17 @@ const RolePage: React.FC = () => {
   * -------------------------- */
   useEffect(() => {
     const loadRoles = async () => {
-      const res = await fetchRoles();
-      const roleData: ApiRole[] = res.data;
-      updateRoles(roleData);
+      try {
+        setLoading(true);
+        const res = await fetchRoles(1, perPage);
+        const roleData: ApiRole[] = res.data;
+        updateRoles(roleData);
+        setPagination(res);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred while loading roles');
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadRoles();
@@ -283,6 +298,22 @@ const RolePage: React.FC = () => {
   // Only active permissions
   // const activePermissions = permissions.filter(p => p.active);
 
+  if (loading) {
+    return (
+      <div className="p-6 bg-white rounded-lg shadow border border-gray-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-white rounded-lg shadow border border-gray-200 text-red-500 dark:border-slate-700 dark:bg-slate-900">
+        Error: {error}
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 bg-white rounded-lg shadow border border-gray-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
       <div className="flex justify-between items-center mb-6">
@@ -302,6 +333,7 @@ const RolePage: React.FC = () => {
             <tr className="bg-gray-50 dark:bg-slate-800">
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Permissions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Created By</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Actions</th>
             </tr>
           </thead>
@@ -312,7 +344,10 @@ const RolePage: React.FC = () => {
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-300">
                   {role.permissions.length > 0
                     ? role.permissions.map(resolvePermissionName).join(', ')
-                    : '—'}
+                    : 'No permissions'}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-300">
+                  {role.tenant?.name ?? 'Global'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                   <IconButton onClick={() => handleEditRole(role)} label="Edit">
