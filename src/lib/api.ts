@@ -55,7 +55,21 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error?.response?.status;
-
+     const apiCode = error?.response?.data?.code
+      /**
+     * Subscription expired → redirect billing
+     */
+    if (
+      typeof window !== "undefined" &&
+      (status === 402 || apiCode === "SUBSCRIPTION_REQUIRED")
+    ) {
+      window.location.href = "/subscriptions/billing"
+      return Promise.reject(error)
+    }
+    
+    /**
+     * Normal error handling (alert)
+     */
     if (typeof window !== "undefined" && !isAlertOpen && isGlobalAlertStatus(status)) {
       isAlertOpen = true;
       const message = getApiErrorText(error);

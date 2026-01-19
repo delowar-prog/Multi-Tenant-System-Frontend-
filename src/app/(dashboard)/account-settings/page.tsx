@@ -19,6 +19,7 @@ import {
   User,
   Users,
 } from "lucide-react";
+import CompanyInformation from "./CompanyInformation";
 
 type Section = {
   id: string;
@@ -51,9 +52,6 @@ const sections: Section[] = [
   { id: "privacy", label: "Privacy", description: "Visibility, data sharing", icon: SlidersHorizontal },
   { id: "notifications", label: "Notifications", description: "Email, push, digest", icon: Bell },
   { id: "billing", label: "Billing", description: "Plan, invoices, usage", icon: CreditCard },
-  { id: "apps", label: "Connected Apps", description: "Integrations, API keys", icon: PlugZap },
-  { id: "locale", label: "Language & Timezone", description: "Locale, time, region", icon: Globe2 },
-  { id: "account", label: "Account", description: "Deactivate or delete", icon: Trash2 },
 ];
 
 const Toggle = ({ id, label, description, defaultChecked }: ToggleProps) => (
@@ -198,6 +196,7 @@ export default function AccountSettingsPage() {
         </aside>
 
         <div className="space-y-6">
+          <CompanyInformation></CompanyInformation>
           <section
             id="profile"
             className="profile-reveal profile-stagger-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
@@ -620,148 +619,6 @@ export default function AccountSettingsPage() {
               </div>
             </div>
           </section>
-          <section
-            id="apps"
-            className="profile-reveal rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Connected apps</p>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Integrations</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                  Manage apps, tokens, and automations.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                View API keys
-              </button>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {[
-                {
-                  name: "Slack",
-                  description: "Message alerts and workflow sync",
-                  status: "Connected",
-                },
-                {
-                  name: "Google Workspace",
-                  description: "Calendar and SSO",
-                  status: "Connected",
-                },
-                {
-                  name: "Zapier",
-                  description: "Automation pipelines",
-                  status: "Limited",
-                },
-              ].map((app) => (
-                <div
-                  key={app.name}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200"
-                >
-                  <div>
-                    <p className="font-semibold text-slate-900 dark:text-white">{app.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{app.description}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                      {app.status}
-                    </span>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section
-            id="locale"
-            className="profile-reveal rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Language & time</p>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Regional settings</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                  Set your language, time zone, and date format.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                Save preferences
-              </button>
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="language" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Language
-                </label>
-                <select
-                  id="language"
-                  name="language"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-300 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100"
-                  defaultValue="en"
-                >
-                  <option value="en">English (US)</option>
-                  <option value="en-uk">English (UK)</option>
-                  <option value="bn">Bangla</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="timezone" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Time zone
-                </label>
-                <select
-                  id="timezone"
-                  name="timezone"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-300 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100"
-                  defaultValue="asia-dhaka"
-                >
-                  <option value="asia-dhaka">Asia/Dhaka (GMT+6)</option>
-                  <option value="asia-kolkata">Asia/Kolkata (GMT+5:30)</option>
-                  <option value="asia-singapore">Asia/Singapore (GMT+8)</option>
-                  <option value="utc">UTC</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="date-format" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Date format
-                </label>
-                <select
-                  id="date-format"
-                  name="date-format"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-300 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100"
-                  defaultValue="dd-mm-yyyy"
-                >
-                  <option value="dd-mm-yyyy">DD / MM / YYYY</option>
-                  <option value="mm-dd-yyyy">MM / DD / YYYY</option>
-                  <option value="yyyy-mm-dd">YYYY / MM / DD</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="region" className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Region
-                </label>
-                <input
-                  id="region"
-                  name="region"
-                  defaultValue="Bangladesh"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-300 focus:outline-none dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100"
-                />
-              </div>
-            </div>
-          </section>
 
           <section
             id="account"
@@ -808,36 +665,6 @@ export default function AccountSettingsPage() {
                   Delete account
                 </button>
               </div>
-            </div>
-          </section>
-
-          <section className="profile-reveal rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Quick links</p>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">More tools</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-                  Jump to other account utilities when needed.
-                </p>
-              </div>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {[
-                { label: "Email preferences", icon: Mail },
-                { label: "Team members", icon: Users },
-                { label: "Sign-in methods", icon: Lock },
-              ].map(({ label, icon: Icon }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-left text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  {label}
-                </button>
-              ))}
             </div>
           </section>
         </div>

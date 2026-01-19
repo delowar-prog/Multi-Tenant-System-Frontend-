@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import IconComponent from './iconComponent';
 import Link from 'next/link';
 import IconButton from './iconBtn';
 import UserDropdown from 'src/app/components/userDropdown';
 import DarkModeToggle from 'src/app/darkModeToggle';
+import { api } from 'src/lib/api';
 
 type OpenState = boolean; // define this if not already defined elsewhere
 
@@ -12,12 +13,28 @@ type NavbarProps = {
   isCollapsed: boolean;
   setIsCollapsed?: React.Dispatch<React.SetStateAction<boolean>>;
 };
+interface Tenant {
+  id: string;                 // UUID
+  name: string;               // Organization / Tenant name
+  logo?: string | null;       // Logo URL or path
+  primary_color?: string;     // HEX color, e.g. '#0d6efd'
+  secondary_color?: string;   // HEX color, e.g. '#6c757d'
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  created_at?: string;        // Timestamp
+  updated_at?: string;        // Timestamp
+}
 
 const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) => {
+  const [tenant, setTenant] = useState<Tenant>({});
   // Define toggleCollapse
   const toggleCollapse = () => {
     if (setIsCollapsed) setIsCollapsed(!isCollapsed);
   };
+  useEffect(() => {
+    api.get("/tenant").then(res => setTenant(res.data));
+  }, []);
 
   return (
     <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-slate-700 dark:bg-slate-900/80 dark:supports-[backdrop-filter]:bg-slate-900/60">
@@ -45,11 +62,13 @@ const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) =>
 
           <Link href="/" className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
-              DU
+              {tenant.logo && (
+                <img src={process.env.NEXT_PUBLIC_API_URL + '/' + tenant.logo}
+                  className="h-12 mr-4" alt="Tenant Logo"/>
+              )}
             </span>
             <div className="leading-tight">
-              <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-200">Dhaka University</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">ঢাকা বিশ্ববিদ্যালয়</p>
+              <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-200">{tenant.name}</p>
             </div>
           </Link>
         </div>

@@ -92,19 +92,19 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
       <div className="flex flex-col gap-1">
         <LinkItem icon="calendar" label="Calendar" href="#" />
         <LinkItem icon="user" label="User Profile" href="/profile" />
-
+        
         <div className="mt-3 mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
           Administration
         </div>
 
         <Group title="User Management" icon="users" isOpenKey="userMgmt">
-          {canAny(["manage-users","view-users"]) && (
+          {canAny(["manage-users", "view-users"]) && (
             <LinkItem icon="dot" label="Users" href="/user" />
           )}
           {can("view-permissions",) && (
             <LinkItem icon="dot" label="Permissions" href="/permission" />
           )}
-          {canAny(["manage-roles","view-roles"]) && (
+          {canAny(["manage-roles", "view-roles"]) && (
             <LinkItem icon="dot" label="Roles" href="/role" />
           )}
         </Group>
@@ -119,6 +119,9 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
         </Group>
 
         <LinkItem icon="id" label="Certificate Applications" href="#" />
+        <LinkItem icon="user" label="Billing" href="/subscriptions/billing" />
+        <LinkItem icon="user" label="Account Settings" href="/account-settings"/>
+               
       </div>
     </nav>
   );
