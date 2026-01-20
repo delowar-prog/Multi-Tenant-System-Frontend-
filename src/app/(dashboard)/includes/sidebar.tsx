@@ -30,10 +30,14 @@ type IconName =
   | "id"
   | "dot"
   | "panel-left-close"
-  | "panel-right-open";
+  | "panel-right-open"
+  | "edit"
+  | "delete"
+  | "sun"
+  | "moon";
 
 export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: SidebarProps) {
-  const { loading, can, canAny } = useAuth();
+  const { loading, can, canAny, me } = useAuth();
   const LinkItem: React.FC<{
     icon: IconName;
     label: string;
@@ -90,38 +94,35 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
     <nav className="h-full overflow-y-auto border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Main</div>
       <div className="flex flex-col gap-1">
-        <LinkItem icon="calendar" label="Calendar" href="#" />
-        <LinkItem icon="user" label="User Profile" href="/profile" />
-        
-        <div className="mt-3 mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-          Administration
-        </div>
 
+        <LinkItem icon="user" label="Dashboard" href={me?.is_super_admin ? "/superadmin/dashboard" : "/dashboard"} />
+        {me?.is_super_admin ? 
+        <LinkItem icon="user" label="Organization Management" href={"/superadmin/organization"} />: ''
+        }
         <Group title="User Management" icon="users" isOpenKey="userMgmt">
           {canAny(["manage-users", "view-users"]) && (
-            <LinkItem icon="dot" label="Users" href="/user" />
+            <LinkItem icon="users" label="Users" href="/user" />
           )}
           {can("view-permissions",) && (
-            <LinkItem icon="dot" label="Permissions" href="/permission" />
+            <LinkItem icon="id" label="Permissions" href="/permission" />
           )}
           {canAny(["manage-roles", "view-roles"]) && (
-            <LinkItem icon="dot" label="Roles" href="/role" />
+            <LinkItem icon="users" label="Roles" href="/role" />
           )}
         </Group>
 
         <Group title="Configuration" icon="panel-left-close" isOpenKey="config">
           {can("view-categories",) && (
-            <LinkItem icon="dot" label="Categories" href="/category" />
+            <LinkItem icon="edit" label="Categories" href="/category" />
           )}
           {can("view-authors") && (
-            <LinkItem icon="dot" label="Authors" href="/author" />
+            <LinkItem icon="edit" label="Authors" href="/author" />
           )}
         </Group>
 
-        <LinkItem icon="id" label="Certificate Applications" href="#" />
-        <LinkItem icon="user" label="Billing" href="/subscriptions/billing" />
-        <LinkItem icon="user" label="Account Settings" href="/account-settings"/>
-               
+        <LinkItem icon="calendar" label="Billing" href="/subscriptions/billing" />
+        <LinkItem icon="edit" label="Account Settings" href="/account-settings" />
+
       </div>
     </nav>
   );

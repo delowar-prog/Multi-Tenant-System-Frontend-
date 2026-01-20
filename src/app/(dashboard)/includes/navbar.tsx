@@ -17,6 +17,7 @@ interface Tenant {
   id: string;                 // UUID
   name: string;               // Organization / Tenant name
   logo?: string | null;       // Logo URL or path
+  logo_url?: string | null;       // Logo URL or path
   primary_color?: string;     // HEX color, e.g. '#0d6efd'
   secondary_color?: string;   // HEX color, e.g. '#6c757d'
   address?: string | null;
@@ -61,12 +62,11 @@ const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) =>
           </button>
 
           <Link href="/" className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
-              {tenant.logo && (
-                <img src={process.env.NEXT_PUBLIC_API_URL + '/' + tenant.logo}
+            
+              {tenant.logo_url && (
+                <img src={tenant.logo_url}
                   className="h-12 mr-4" alt="Tenant Logo"/>
               )}
-            </span>
             <div className="leading-tight">
               <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-200">{tenant.name}</p>
             </div>

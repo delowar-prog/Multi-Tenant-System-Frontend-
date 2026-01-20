@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState, ChangeEvent } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface Program {
   id: number;
@@ -54,8 +55,52 @@ export default function Home(){
   // paginate reset on dependencies
   if (page > totalPages) setPage(1);
 
+  // Mock stats
+  const stats = [
+    { title: "Total Programs", value: data.length, icon: "📚" },
+    { title: "Total Users", value: 150, icon: "👥" },
+    { title: "Active Sessions", value: 45, icon: "🔥" },
+    { title: "Revenue", value: "$12,500", icon: "💰" },
+  ];
+
+  // Mock chart data
+  const chartData = [
+    { name: 'Bachelor', students: 120 },
+    { name: 'Masters', students: 80 },
+    { name: 'M.B.B.S.', students: 60 },
+  ];
+
   return (
     <div className="p-4 text-slate-900 dark:text-slate-100 sm:p-6">
+      {/* Dashboard Cards */}
+      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => (
+          <div key={index} className="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+            <div className="flex items-center">
+              <div className="text-2xl">{stat.icon}</div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{stat.title}</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stat.value}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <div className="mb-8 rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+        <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Program Enrollment</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="students" fill="#3b82f6" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
       {/* Header */}
       <h2 className="text-[18px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
         All Programs ({sorted.length})

@@ -1,48 +1,54 @@
 "use client";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Home() {
+    // Mock stats for superadmin
+    const stats = [
+        { title: "Total Tenants", value: 25, icon: "🏢" },
+        { title: "Total Admins", value: 10, icon: "👑" },
+        { title: "Active Subscriptions", value: 18, icon: "📈" },
+        { title: "Total Revenue", value: "$50,000", icon: "💰" },
+    ];
+
+    // Mock chart data
+    const chartData = [
+        { name: 'Jan', revenue: 4000 },
+        { name: 'Feb', revenue: 3000 },
+        { name: 'Mar', revenue: 5000 },
+        { name: 'Apr', revenue: 4500 },
+        { name: 'May', revenue: 6000 },
+    ];
 
     return (
         <div className="p-4 text-slate-900 dark:text-slate-100 sm:p-6">
-            {/* Header */}
-            <h2 className="text-[18px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                All Programs
-            </h2>
-
-            {/* Search and Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-                <div className="flex flex-col sm:flex-row gap-5">
-                    <div>
-                        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-slate-300">
-                            Delivery Type
-                        </label>
-                        <select
-                            defaultValue=""
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-blue-400"
-                        >
-                            <option value="">All</option>
-                            <option value="Emergency">Emergency</option>
-                            <option value="Regular">Regular</option>
-                        </select>
+            {/* Dashboard Cards */}
+            <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat, index) => (
+                    <div key={index} className="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+                        <div className="flex items-center">
+                            <div className="text-2xl">{stat.icon}</div>
+                            <div className="ml-4">
+                                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{stat.title}</p>
+                                <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stat.value}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-slate-300">
-                            Delivery Type
-                        </label>
-                        <select
-                            defaultValue=""
-                            className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-blue-400"
-                        >
-                            <option value="">All</option>
-                            <option value="Emergency">Emergency</option>
-                            <option value="Regular">Regular</option>
-                        </select>
-                    </div>
-                </div>
+                ))}
+            </div>
 
-                <div className="flex flex-1 items-center gap-3 sm:max-w-md">
-                    <h1>This is Super Admin Dashboard</h1>
-                </div>
+            {/* Chart */}
+            <div className="mb-8 rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+                <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Monthly Revenue</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="revenue" fill="#10b981" />
+                    </BarChart>
+                </ResponsiveContainer>
             </div>
         </div>
     );

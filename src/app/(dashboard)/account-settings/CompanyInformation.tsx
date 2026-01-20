@@ -5,6 +5,7 @@ interface Tenant {
   id: string;                 // UUID
   name: string;               // Organization / Tenant name
   logo?: string | null;       // Logo URL or path
+  logo_url?: string | null;   // 
   primary_color?: string;     // HEX color, e.g. '#0d6efd'
   secondary_color?: string;   // HEX color, e.g. '#6c757d'
   address?: string;
@@ -84,8 +85,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
                 <div className="flex flex-col items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-center text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200">
-                    {tenant.logo ? (
-                        <img src={tenant.logo} alt="Logo" className="h-16 w-16 rounded-2xl object-cover shadow-sm" />
+                    {tenant.logo_url ? (
+                        <img src={tenant.logo_url} alt="Logo" className="h-16 w-16 rounded-2xl object-cover shadow-sm" />
                     ) : (
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-xl font-semibold text-white shadow-sm dark:bg-white dark:text-slate-900">
                             {tenant.name?.charAt(0).toUpperCase() || 'C'}

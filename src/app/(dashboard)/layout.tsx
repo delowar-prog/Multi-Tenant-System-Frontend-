@@ -137,7 +137,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           )}
 
           {/* MAIN (desktop) */}
-          <main className="min-h-[calc(100dvh-64px)] p-2 md:p-6 rounded-2xl bg-white shadow-sm dark:bg-slate-900 dark:text-slate-100">
+          <main className="min-h-[calc(100dvh-64px)] p-2 md:p-6 rounded-2xl bg-gray-100 shadow-sm dark:bg-slate-900 dark:text-slate-100">
             {children}
           </main>
         </div>
