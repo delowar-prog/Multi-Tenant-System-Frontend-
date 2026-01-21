@@ -7,8 +7,17 @@ export const api = axios.create({
 
 // attach token for later calls
 api.interceptors.request.use(cfg => {
-  const t = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  if (t) cfg.headers.Authorization = `Bearer ${t}`;
+  if (typeof window === "undefined") return cfg;
+    // 1️⃣ priority: impersonation token
+  const impersonationToken =
+    localStorage.getItem("token_impersonation");
+
+  // 2️⃣ fallback: admin token
+  const userToken =
+    localStorage.getItem("token");
+
+  const token = impersonationToken || userToken;
+  if (token) cfg.headers.Authorization = `Bearer ${token}`;
   return cfg;
 });
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getUser, logout } from "../services/authService";
 import { useRouter, usePathname } from "next/navigation";
 import axios from "axios";
@@ -72,6 +72,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [pathname, router]);
 
+  const refreshMe = useCallback(async (withLoading: boolean = false) => {
+    if (withLoading) setLoading(true);
+    try {
+      const res = await api.get<MeResponse>("/me");
+      setMe(res.data);
+      setUser(res.data);
+    } catch (err) {
+      console.warn("Failed to refresh user:", err);
+    } finally {
+      if (withLoading) setLoading(false);
+    }
+  }, []);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -87,16 +100,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.get<MeResponse>("/me"); // token/cookie configured
-        setMe(res.data);
-        console.log(res.data.permissions);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    refreshMe(true);
+  }, [refreshMe]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleImpersonationChanged = () => {
+      refreshMe(false);
+    };
+    window.addEventListener("impersonation-changed", handleImpersonationChanged);
+    return () => window.removeEventListener("impersonation-changed", handleImpersonationChanged);
+  }, [refreshMe]);
 
   // 🚦 permission helpers
   const permissionSet = useMemo(

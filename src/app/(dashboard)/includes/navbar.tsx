@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import IconComponent from './iconComponent';
 import Link from 'next/link';
 import IconButton from './iconBtn';
@@ -33,9 +33,27 @@ const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) =>
   const toggleCollapse = () => {
     if (setIsCollapsed) setIsCollapsed(!isCollapsed);
   };
-  useEffect(() => {
-    api.get("/tenant").then(res => setTenant(res.data));
+  const fetchTenant = useCallback(async () => {
+    try {
+      const res = await api.get("/tenant");
+      setTenant(res.data);
+    } catch (err) {
+      console.warn("Failed to load tenant:", err);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTenant();
+  }, [fetchTenant]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleImpersonationChanged = () => {
+      fetchTenant();
+    };
+    window.addEventListener("impersonation-changed", handleImpersonationChanged);
+    return () => window.removeEventListener("impersonation-changed", handleImpersonationChanged);
+  }, [fetchTenant]);
 
   return (
     <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-slate-700 dark:bg-slate-900/80 dark:supports-[backdrop-filter]:bg-slate-900/60">

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchOrganizations} from "src/services/tenantServices";
+import { api } from "src/lib/api";
 import IconButton from "src/app/(dashboard)/includes/iconBtn";
 import IconComponent from "src/app/(dashboard)/includes/iconComponent";
 
@@ -45,6 +46,7 @@ const UserPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [perPage, setPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [impersonatingId, setImpersonatingId] = useState<number | null>(null);
 
 
   /** --------------------------
@@ -91,6 +93,25 @@ const UserPage: React.FC = () => {
       setError(err instanceof Error ? err.message : 'An error occurred while fetching users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImpersonate = async (tenantId: number) => {
+    try {
+      setImpersonatingId(tenantId);
+      const res = await api.post(`/admin/impersonate/${tenantId}`);
+      const token = res?.data?.impersonation_token;
+      if (token) {
+        localStorage.setItem("token_impersonation", token);
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("impersonation-changed"));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to impersonate tenant:", err);
+    } finally {
+      setImpersonatingId(null);
     }
   };
 
@@ -177,10 +198,11 @@ const filteredOrganizations = useMemo(() => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-300">{org.address}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-300">
                   <button
-                    onClick={() => {/* handle impersonate */}}
-                    className="px-3 py-1 text-xs uppercase cursor-pointer font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 dark:text-white dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                    onClick={() => handleImpersonate(org.id)}
+                    disabled={impersonatingId === org.id}
+                    className="px-3 py-1 text-xs uppercase cursor-pointer font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70 dark:text-white dark:bg-indigo-600 dark:hover:bg-indigo-700"
                   >
-                    Impersonate
+                    {impersonatingId === org.id ? "Impersonating..." : "Impersonate"}
                   </button>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">

@@ -1,5 +1,7 @@
 "use client";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "src/context/authContext";
+import { api } from "src/lib/api";
 import IconComponent from "./iconComponent";
 
 type OpenState = {
@@ -38,6 +40,46 @@ type IconName =
 
 export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: SidebarProps) {
   const { loading, can, canAny, me } = useAuth();
+  const [isImpersonating, setIsImpersonating] = useState(false);
+
+  useEffect(() => {
+    const updateImpersonation = () => {
+      if (typeof window === "undefined") return;
+      setIsImpersonating(Boolean(localStorage.getItem("token_impersonation")));
+    };
+
+    updateImpersonation();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "token_impersonation") {
+        updateImpersonation();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("impersonation-changed", updateImpersonation);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("impersonation-changed", updateImpersonation);
+    };
+  }, []);
+
+  const handleStopImpersonation = async () => {
+    if (typeof window === "undefined") return;
+    try {
+      await api.post("/impersonation/exit");
+    } catch (err) {
+      console.error("Failed to exit impersonation:", err);
+    }
+    localStorage.removeItem("token_impersonation");
+    const userToken = localStorage.getItem("token");
+    if (userToken) {
+      api.defaults.headers.common.Authorization = `Bearer ${userToken}`;
+    } else {
+      delete api.defaults.headers.common.Authorization;
+    }
+    setIsImpersonating(false);
+    window.dispatchEvent(new Event("impersonation-changed"));
+  };
   const LinkItem: React.FC<{
     icon: IconName;
     label: string;
@@ -92,6 +134,18 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
 
   return (
     <nav className="h-full overflow-y-auto border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      {isImpersonating && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200">
+          <span>You are impersonating this tenant</span>
+          <button
+            type="button"
+            onClick={handleStopImpersonation}
+            className="rounded border border-amber-300 bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase text-amber-900 hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-800/60 dark:text-amber-100 dark:hover:bg-amber-800"
+          >
+            Stop
+          </button>
+        </div>
+      )}
       <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Main</div>
       <div className="flex flex-col gap-1">
 
