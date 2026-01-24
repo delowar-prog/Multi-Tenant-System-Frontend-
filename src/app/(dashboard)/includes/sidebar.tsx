@@ -150,14 +150,17 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
       <div className="flex flex-col gap-1">
 
         <LinkItem icon="user" label="Dashboard" href={me?.is_super_admin ? "/superadmin/dashboard" : "/dashboard"} />
-        {me?.is_super_admin ? 
-        <LinkItem icon="user" label="Organization Management" href={"/superadmin/organization"} />: ''
-        }
-        <Group title="User Management" icon="users" isOpenKey="userMgmt">
+        <Group title="Organization Config" icon="users" isOpenKey="userMgmt">
+          {me?.is_super_admin ?
+            <LinkItem icon="user" label="Organization" href={"/superadmin/organization"} /> : ''
+          }
+          {/* {can("view-branches") && ( */}
+            <LinkItem icon="users" label="Branch" href="/branch" />
+          {/* )} */}
           {canAny(["manage-users", "view-users"]) && (
             <LinkItem icon="users" label="Users" href="/user" />
           )}
-          {can("view-permissions",) && (
+          {can("view-permissions") && (
             <LinkItem icon="id" label="Permissions" href="/permission" />
           )}
           {canAny(["manage-roles", "view-roles"]) && (
@@ -174,6 +177,9 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
           )}
         </Group>
 
+        {can("view-logs") && (
+          <LinkItem icon="clock" label="Logs" href="/logs" />
+        )}
         <LinkItem icon="calendar" label="Billing" href="/subscriptions/billing" />
         <LinkItem icon="edit" label="Account Settings" href="/account-settings" />
 
