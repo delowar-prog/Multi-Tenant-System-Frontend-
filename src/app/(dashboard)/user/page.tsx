@@ -1,11 +1,19 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { fetchUsers, assignRole, createUser } from "src/services/userServices";
+import { fetchUsers, assignRole, createUser, assignBranch } from "src/services/userServices";
+import { fetchAllBranches, fetchBranchSelect } from "src/services/branchServices";
 import { fetchRoles } from "src/services/roleServices";
 import { UserPlus } from "lucide-react";
 import IconButton from "src/app/(dashboard)/includes/iconBtn";
 import IconComponent from "src/app/(dashboard)/includes/iconComponent";
+
+interface Branch {
+  id: string;
+  name: string;
+  email?: string;
+  address?: string;
+}
 
 interface Role {
   id: number;
@@ -30,6 +38,7 @@ interface User {
   updated_at: string;
   roles: Role[];
   permissions: any[]; // Assuming permissions array, adjust if needed
+  branches?: Branch[];
 }
 
 interface PaginationLink {
@@ -66,12 +75,22 @@ const UserPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branchSearchTerm, setBranchSearchTerm] = useState("");
+  const [branchLoading, setBranchLoading] = useState(false);
+  const [branchError, setBranchError] = useState<string | null>(null);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+  const [showAssignBranchModal, setShowAssignBranchModal] = useState(false);
+  const [assignBranchError, setAssignBranchError] = useState<string | null>(null);
+  const [assigningBranches, setAssigningBranches] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [userPassword, setUserPassword] = useState("");
   const [userPhone, setUserPhone] = useState("");
   const [userAddress, setUserAddress] = useState("");
+  const [selectBranches, setSelectBranches] = useState<Branch[]>([]);
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
 
   /** --------------------------
    * Load users from API
@@ -107,7 +126,21 @@ const UserPage: React.FC = () => {
 
   useEffect(() => {
     loadRoles();
+    fetchBranchSelect().then((data) => setSelectBranches(Array.isArray(data) ? data : [])).catch(console.error);
   }, []);
+
+  const loadBranches = async () => {
+    try {
+      setBranchLoading(true);
+      setBranchError(null);
+      const response = await fetchAllBranches();
+      setBranches(Array.isArray(response) ? response : []);
+    } catch (err) {
+      setBranchError(err instanceof Error ? err.message : "An error occurred while fetching branches");
+    } finally {
+      setBranchLoading(false);
+    }
+  };
 
   const handlePageChange = async (page: number) => {
     try {
@@ -142,6 +175,7 @@ const UserPage: React.FC = () => {
     setUserPassword("");
     setUserPhone("");
     setUserAddress("");
+    setSelectedBranchIds([]);
   };
 
   const handleAddUser = async () => {
@@ -152,6 +186,7 @@ const UserPage: React.FC = () => {
         password: userPassword,
         phone: userPhone,
         address: userAddress,
+        branches: selectedBranchIds,
       });
       setShowAddModal(false);
       resetUserForm();
@@ -169,6 +204,18 @@ const UserPage: React.FC = () => {
     setShowAssignModal(true);
   };
 
+  const handleAssignBranch = (user: User) => {
+    const preselected = user.branches?.[0]?.id ?? "";
+    setSelectedUser(user);
+    setSelectedBranchId(preselected);
+    setBranchSearchTerm("");
+    setAssignBranchError(null);
+    setShowAssignBranchModal(true);
+    if (!branches.length) {
+      loadBranches();
+    }
+  };
+
   const handleAssignRoleSubmit = async () => {
     if (!selectedUser || !selectedRole) return;
 
@@ -184,6 +231,24 @@ const UserPage: React.FC = () => {
     }
   };
 
+  const handleAssignBranchSubmit = async () => {
+    if (!selectedUser || !selectedBranchId) return;
+
+    try {
+      setAssigningBranches(true);
+      setAssignBranchError(null);
+      await assignBranch(selectedUser.id, selectedBranchId);
+      setShowAssignBranchModal(false);
+      const response = await fetchUsers(pagination?.current_page || 1, perPage);
+      setUsers(response.data);
+      setPagination(response);
+    } catch (err) {
+      setAssignBranchError(err instanceof Error ? err.message : "An error occurred while assigning branch");
+    } finally {
+      setAssigningBranches(false);
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return users;
@@ -194,6 +259,17 @@ const UserPage: React.FC = () => {
       return name.includes(query) || email.includes(query) || phone.includes(query);
     });
   }, [users, searchTerm]);
+
+  const filteredBranchOptions = useMemo(() => {
+    const query = branchSearchTerm.trim().toLowerCase();
+    if (!query) return branches;
+    return branches.filter((branch) => {
+      const name = branch.name?.toLowerCase() ?? "";
+      const email = branch.email?.toLowerCase() ?? "";
+      const address = branch.address?.toLowerCase() ?? "";
+      return name.includes(query) || email.includes(query) || address.includes(query);
+    });
+  }, [branches, branchSearchTerm]);
 
   if (loading) {
     return <div className="p-6 bg-white rounded-lg shadow border border-gray-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">Loading...</div>;
@@ -270,14 +346,17 @@ const UserPage: React.FC = () => {
                   {user.roles.map(role => role.name).join(', ')}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <IconButton onClick={() => {/* handle edit */}} label="Edit">
+                  <IconButton onClick={() => {/* handle edit */ }} label="Edit">
                     <IconComponent name="edit" className="h-4 w-4 text-indigo-600" />
                   </IconButton>
-                  <IconButton onClick={() => {/* handle delete */}} label="Delete">
+                  <IconButton onClick={() => {/* handle delete */ }} label="Delete">
                     <IconComponent name="delete" className="h-4 w-4 text-red-600" />
                   </IconButton>
                   <IconButton onClick={() => handleAssignRole(user)} label="Assign Role">
                     <IconComponent name="user" className="h-4 w-4 text-green-600" />
+                  </IconButton>
+                  <IconButton onClick={() => handleAssignBranch(user)} label="Assign Branch">
+                    <IconComponent name="id" className="h-4 w-4 text-amber-600" />
                   </IconButton>
                 </td>
               </tr>
@@ -309,8 +388,8 @@ const UserPage: React.FC = () => {
                 onClick={() => link.page && handlePageChange(link.page)}
                 disabled={link.page === null || link.active}
                 className={`px-3 py-2 text-sm font-medium rounded ${link.active
-                    ? 'bg-blue-500 text-white dark:bg-blue-500'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-blue-500 text-white dark:bg-blue-500'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
                   } ${link.page === null ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
               >
                 {link.label}
@@ -370,6 +449,35 @@ const UserPage: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
                 />
               </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Branches</label>
+                <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-2 dark:border-slate-700 dark:bg-slate-800">
+                  {selectBranches.map((branch) => (
+                    <div key={branch.id} className="flex items-center mb-2 last:mb-0">
+                      <input
+                        type="checkbox"
+                        id={`branch-${branch.id}`}
+                        checked={selectedBranchIds.includes(branch.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedBranchIds([...selectedBranchIds, branch.id]);
+                          } else {
+                            setSelectedBranchIds(selectedBranchIds.filter((id) => id !== branch.id));
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
+                      />
+                      <label htmlFor={`branch-${branch.id}`} className="ml-2 text-sm text-gray-900 dark:text-slate-100 cursor-pointer select-none">
+                        {branch.name}
+                      </label>
+                    </div>
+                  ))}
+                  {selectBranches.length === 0 && (
+                    <p className="text-sm text-gray-500 dark:text-slate-400">No branches available</p>
+                  )}
+                </div>
+              </div>
+
               <div className="flex items-center px-4 py-3 space-x-4">
                 <button
                   onClick={handleAddUser}
@@ -421,6 +529,87 @@ const UserPage: React.FC = () => {
                 <button
                   onClick={() => setShowAssignModal(false)}
                   className="mt-3 px-4 py-2 bg-gray-300 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAssignBranchModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full dark:bg-black/70">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white dark:bg-slate-900 dark:border-slate-700">
+            <div className="mt-3">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-slate-100">
+                Assign Branch to {selectedUser?.name}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-slate-300">
+                Select a branch to assign.
+              </p>
+              {branchError && (
+                <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+                  {branchError}
+                </div>
+              )}
+              {assignBranchError && (
+                <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+                  {assignBranchError}
+                </div>
+              )}
+              <div className="mt-4">
+                <input
+                  type="text"
+                  value={branchSearchTerm}
+                  onChange={(e) => setBranchSearchTerm(e.target.value)}
+                  placeholder="Search branches"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
+                />
+              </div>
+              <div className="mt-3 max-h-64 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-700">
+                {branchLoading ? (
+                  <div className="px-4 py-6 text-sm text-gray-500 dark:text-slate-300">
+                    Loading branches...
+                  </div>
+                ) : filteredBranchOptions.length ? (
+                  filteredBranchOptions.map((branch) => (
+                    <label
+                      key={branch.id}
+                      className="flex items-start gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <input
+                        type="radio"
+                        name="branch-selection"
+                        checked={selectedBranchId === branch.id}
+                        onChange={() => setSelectedBranchId(branch.id)}
+                        className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
+                      />
+                      <span className="flex flex-col">
+                        <span className="font-medium text-gray-900 dark:text-slate-100">{branch.name}</span>
+                        {branch.email && (
+                          <span className="text-xs text-gray-500 dark:text-slate-400">{branch.email}</span>
+                        )}
+                      </span>
+                    </label>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-sm text-gray-500 dark:text-slate-300">
+                    No branches found.
+                  </div>
+                )}
+              </div>
+              <div className="items-center px-4 py-4">
+                <button
+                  onClick={handleAssignBranchSubmit}
+                  className="w-full rounded-md bg-blue-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={assigningBranches || !selectedBranchId}
+                >
+                  {assigningBranches ? "Assigning..." : "Assign Branch"}
+                </button>
+                <button
+                  onClick={() => setShowAssignBranchModal(false)}
+                  className="mt-3 w-full rounded-md bg-gray-300 px-4 py-2 text-base font-medium text-gray-900 shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
                 >
                   Cancel
                 </button>

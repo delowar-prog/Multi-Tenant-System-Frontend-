@@ -470,7 +470,6 @@ const BranchPage: React.FC = () => {
                 <select
                   value={formState.tenantId}
                   onChange={(e) => setFormState((prev) => ({ ...prev, tenantId: e.target.value }))}
-                  disabled={!me?.is_super_admin || tenantLoading}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/60"
                 >
                   <option value="">{tenantLoading ? "Loading tenants..." : "Select tenant"}</option>
