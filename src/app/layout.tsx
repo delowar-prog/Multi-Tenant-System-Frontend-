@@ -3,8 +3,8 @@ import { AuthProvider } from "src/context/authContext";
 import "./globals.css";
 
 export const metadata = {
-  title: "App Seba",
-  description: "University Suite",
+  title: "Multitenant System",
+  description: "",
 };
 
 const themeScript = `
