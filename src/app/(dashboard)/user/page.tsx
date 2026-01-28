@@ -4,9 +4,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { fetchUsers, assignRole, createUser, assignBranch } from "src/services/userServices";
 import { fetchAllBranches, fetchBranchSelect } from "src/services/branchServices";
 import { fetchRoles } from "src/services/roleServices";
+import { fetchTenants } from "src/services/tenantServices";
 import { UserPlus } from "lucide-react";
 import IconButton from "src/app/(dashboard)/includes/iconBtn";
 import IconComponent from "src/app/(dashboard)/includes/iconComponent";
+import { useAuth } from "src/context/authContext";
 
 interface Branch {
   id: string;
@@ -26,6 +28,11 @@ interface Role {
     model_id: number;
     role_id: number;
   };
+}
+
+interface Tenant {
+  id: string;
+  name: string;
 }
 
 interface User {
@@ -65,6 +72,7 @@ interface ApiResponse {
 }
 
 const UserPage: React.FC = () => {
+  const { me } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,6 +99,13 @@ const UserPage: React.FC = () => {
   const [userAddress, setUserAddress] = useState("");
   const [selectBranches, setSelectBranches] = useState<Branch[]>([]);
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenantLoading, setTenantLoading] = useState(false);
+  const [tenantError, setTenantError] = useState<string | null>(null);
+  const [selectedTenantId, setSelectedTenantId] = useState("");
+  const [createUserError, setCreateUserError] = useState<string | null>(null);
+
+  const isSuperAdmin = Number(me?.is_super_admin) === 1;
 
   /** --------------------------
    * Load users from API
@@ -124,10 +139,28 @@ const UserPage: React.FC = () => {
     }
   };
 
+  const loadTenants = async () => {
+    try {
+      setTenantLoading(true);
+      setTenantError(null);
+      const response = await fetchTenants();
+      setTenants(Array.isArray(response) ? response : []);
+    } catch (err) {
+      setTenantError(err instanceof Error ? err.message : "Failed to load tenants");
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadRoles();
     fetchBranchSelect().then((data) => setSelectBranches(Array.isArray(data) ? data : [])).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (!showAddModal || !isSuperAdmin || tenants.length) return;
+    loadTenants();
+  }, [showAddModal, isSuperAdmin, tenants.length]);
 
   const loadBranches = async () => {
     try {
@@ -176,18 +209,31 @@ const UserPage: React.FC = () => {
     setUserPhone("");
     setUserAddress("");
     setSelectedBranchIds([]);
+    setSelectedTenantId("");
+    setCreateUserError(null);
+    setTenantError(null);
   };
 
   const handleAddUser = async () => {
     try {
-      await createUser({
+      if (isSuperAdmin && !selectedTenantId) {
+        setCreateUserError("Tenant is required for super admin users.");
+        return;
+      }
+
+      const payload: Record<string, any> = {
         name: userName,
         email: userEmail,
         password: userPassword,
         phone: userPhone,
         address: userAddress,
-        branches: selectedBranchIds,
-      });
+      };
+
+      if (isSuperAdmin) {
+        payload.tenant_id = selectedTenantId;
+      }
+
+      await createUser(payload);
       setShowAddModal(false);
       resetUserForm();
       const response = await fetchUsers(pagination?.current_page || 1, perPage);
@@ -285,7 +331,10 @@ const UserPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-slate-100">User Management</h1>
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              resetUserForm();
+              setShowAddModal(true);
+            }}
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition duration-200 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
             <UserPlus className="h-4 w-4" aria-hidden="true" />
@@ -405,6 +454,35 @@ const UserPage: React.FC = () => {
           <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-2xl shadow-lg rounded-md bg-white dark:bg-slate-900 dark:border-slate-700">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-slate-100">Create User</h3>
+              {tenantError && (
+                <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
+                  {tenantError}
+                </div>
+              )}
+              {createUserError && (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+                  {createUserError}
+                </div>
+              )}
+              {isSuperAdmin && (
+                <div className="mb-4">
+                  <select
+                    value={selectedTenantId}
+                    onChange={(e) => {
+                      setSelectedTenantId(e.target.value);
+                      setCreateUserError(null);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:disabled:bg-slate-800/60"
+                  >
+                    <option value="">{tenantLoading ? "Loading tenants..." : "Select tenant"}</option>
+                    {tenants.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="mb-4">
                 <input
                   type="text"
@@ -448,34 +526,6 @@ const UserPage: React.FC = () => {
                   onChange={(e) => setUserAddress(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
                 />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Branches</label>
-                <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-2 dark:border-slate-700 dark:bg-slate-800">
-                  {selectBranches.map((branch) => (
-                    <div key={branch.id} className="flex items-center mb-2 last:mb-0">
-                      <input
-                        type="checkbox"
-                        id={`branch-${branch.id}`}
-                        checked={selectedBranchIds.includes(branch.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedBranchIds([...selectedBranchIds, branch.id]);
-                          } else {
-                            setSelectedBranchIds(selectedBranchIds.filter((id) => id !== branch.id));
-                          }
-                        }}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700"
-                      />
-                      <label htmlFor={`branch-${branch.id}`} className="ml-2 text-sm text-gray-900 dark:text-slate-100 cursor-pointer select-none">
-                        {branch.name}
-                      </label>
-                    </div>
-                  ))}
-                  {selectBranches.length === 0 && (
-                    <p className="text-sm text-gray-500 dark:text-slate-400">No branches available</p>
-                  )}
-                </div>
               </div>
 
               <div className="flex items-center px-4 py-3 space-x-4">
