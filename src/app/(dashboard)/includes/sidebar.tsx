@@ -154,10 +154,10 @@ export default function Sidebar({ open, setOpen, onNavigate, isCollapsed }: Side
           {me?.is_super_admin ?
             <LinkItem icon="user" label="Organization" href={"/superadmin/organization"} /> : ''
           }
-          {/* {can("view-branches") && ( */}
+         {can("view-branches") && ( 
             <LinkItem icon="users" label="Branch" href="/branch" />
-          {/* )} */}
-          {canAny(["manage-users", "view-users"]) && (
+           )} 
+          {can("view-users") && (
             <LinkItem icon="users" label="Users" href="/user" />
           )}
           {can("view-permissions") && (

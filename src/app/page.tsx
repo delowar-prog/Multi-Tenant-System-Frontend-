@@ -292,8 +292,6 @@ export default function LandingPage() {
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
             <a href="#plans" className="transition hover:text-slate-900">Plans</a>
-            <a href="#projects" className="transition hover:text-slate-900">Projects</a>
-            <a href="#clients" className="transition hover:text-slate-900">Clients</a>
             <a href="#testimonials" className="transition hover:text-slate-900">Testimonials</a>
             <a href="#footer" className="transition hover:text-slate-900">Contact</a>
           </nav>
@@ -523,45 +521,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="projects" className="px-4 pb-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="profile-reveal profile-stagger-1 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">Projects</p>
-                <h2 className={`${sora.className} text-3xl font-semibold text-slate-900`}>
-                  Strategic deployments
-                </h2>
-              </div>
-              <p className="max-w-md text-sm text-slate-600">
-                A snapshot of recent multi-tenant rollouts across regulated industries.
-              </p>
-            </div>
-
-            <div className="mt-8 grid gap-6 lg:grid-cols-3">
-              {projects.map((project) => (
-                <div
-                  key={project.name}
-                  className="profile-reveal rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-                >
-                  <h3 className={`${sora.className} text-xl font-semibold text-slate-900`}>{project.name}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{project.description}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {project.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="clients" className="px-4 pb-20">
+        {/* <section id="clients" className="px-4 pb-20">
           <div className="mx-auto max-w-6xl">
             <div className="profile-reveal profile-stagger-1 text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">Clients</p>
@@ -581,7 +541,7 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
         <section id="testimonials" className="px-4 pb-20">
           <div className="mx-auto max-w-6xl">

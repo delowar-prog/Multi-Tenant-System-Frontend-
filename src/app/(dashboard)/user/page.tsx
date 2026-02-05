@@ -72,7 +72,7 @@ interface ApiResponse {
 }
 
 const UserPage: React.FC = () => {
-  const { me } = useAuth();
+  const { can, me } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,14 +131,15 @@ const UserPage: React.FC = () => {
    * Load roles for assignment
    * -------------------------- */
   const loadRoles = async () => {
+    if (!can('manage-users')) return;
+
     try {
-      const response = await fetchRoles(1, 100); // Large per_page to get all roles
+      const response = await fetchRoles(1, 100);
       setRoles(response.data);
     } catch (err) {
       console.error('Error fetching roles:', err);
     }
   };
-
   const loadTenants = async () => {
     try {
       setTenantLoading(true);
@@ -153,7 +154,9 @@ const UserPage: React.FC = () => {
   };
 
   useEffect(() => {
-    loadRoles();
+    if(can('manage-users')){
+      loadRoles();
+    }
     fetchBranchSelect().then((data) => setSelectBranches(Array.isArray(data) ? data : [])).catch(console.error);
   }, []);
 
@@ -401,12 +404,16 @@ const UserPage: React.FC = () => {
                   <IconButton onClick={() => {/* handle delete */ }} label="Delete">
                     <IconComponent name="delete" className="h-4 w-4 text-red-600" />
                   </IconButton>
-                  <IconButton onClick={() => handleAssignRole(user)} label="Assign Role">
-                    <IconComponent name="user" className="h-4 w-4 text-green-600" />
-                  </IconButton>
-                  <IconButton onClick={() => handleAssignBranch(user)} label="Assign Branch">
-                    <IconComponent name="id" className="h-4 w-4 text-amber-600" />
-                  </IconButton>
+                  {can("manage-users") && (
+                    <IconButton onClick={() => handleAssignRole(user)} label="Assign Role">
+                      <IconComponent name="user" className="h-4 w-4 text-green-600" />
+                    </IconButton>
+                  )}
+                  {can("manage-users") && (
+                    <IconButton onClick={() => handleAssignBranch(user)} label="Assign Branch">
+                      <IconComponent name="id" className="h-4 w-4 text-amber-600" />
+                    </IconButton>
+                  )}
                 </td>
               </tr>
             ))}
