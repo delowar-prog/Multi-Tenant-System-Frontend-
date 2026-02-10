@@ -30,7 +30,7 @@ export const assignRole = async (userId: number, role: string) => {
   return response.data;
 };
 
-export const assignBranch = async (userId: number, branchId: string) => {
-  const response = await api.post(`/users/${userId}/assign-branch`, { branch_id: branchId });
+export const assignBranch = async (userId: number, branchIds: string[]) => {
+  const response = await api.post(`/users/${userId}/assign-branch`, { branch_ids: branchIds });
   return response.data;
 };

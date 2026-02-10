@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import IconComponent from './iconComponent';
-import Link from 'next/link';
-import IconButton from './iconBtn';
-import UserDropdown from 'src/app/components/userDropdown';
-import DarkModeToggle from 'src/app/darkModeToggle';
-import { api } from 'src/lib/api';
+import React, { useCallback, useEffect, useState } from "react";
+import IconComponent from "./iconComponent";
+import Link from "next/link";
+import IconButton from "./iconBtn";
+import UserDropdown from "src/app/components/userDropdown";
+import DarkModeToggle from "src/app/darkModeToggle";
+import { api } from "src/lib/api";
 
 type OpenState = boolean; // define this if not already defined elsewhere
 
@@ -14,20 +14,24 @@ type NavbarProps = {
   setIsCollapsed?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 interface Tenant {
-  id: string;                 // UUID
-  name: string;               // Organization / Tenant name
-  logo?: string | null;       // Logo URL or path
-  logo_url?: string | null;       // Logo URL or path
-  primary_color?: string;     // HEX color, e.g. '#0d6efd'
-  secondary_color?: string;   // HEX color, e.g. '#6c757d'
+  id: string; // UUID
+  name: string; // Organization / Tenant name
+  logo?: string | null; // Logo URL or path
+  logo_url?: string | null; // Logo URL or path
+  primary_color?: string; // HEX color, e.g. '#0d6efd'
+  secondary_color?: string; // HEX color, e.g. '#6c757d'
   address?: string | null;
   email?: string | null;
   phone?: string | null;
-  created_at?: string;        // Timestamp
-  updated_at?: string;        // Timestamp
+  created_at?: string; // Timestamp
+  updated_at?: string; // Timestamp
 }
 
-const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) => {
+const Navbar = ({
+  setSidebarOpen,
+  isCollapsed,
+  setIsCollapsed,
+}: NavbarProps) => {
   const [tenant, setTenant] = useState<Tenant>({});
   // Define toggleCollapse
   const toggleCollapse = () => {
@@ -51,8 +55,15 @@ const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) =>
     const handleImpersonationChanged = () => {
       fetchTenant();
     };
-    window.addEventListener("impersonation-changed", handleImpersonationChanged);
-    return () => window.removeEventListener("impersonation-changed", handleImpersonationChanged);
+    window.addEventListener(
+      "impersonation-changed",
+      handleImpersonationChanged,
+    );
+    return () =>
+      window.removeEventListener(
+        "impersonation-changed",
+        handleImpersonationChanged,
+      );
   }, [fetchTenant]);
 
   return (
@@ -75,18 +86,27 @@ const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) =>
             aria-label="Toggle sidebar width"
             title="Toggle sidebar"
           >
-            <IconComponent name={isCollapsed ? 'panel-right-open' : 'panel-left-close'} className="h-5 w-5" />
-            <span className="hidden lg:inline">{isCollapsed ? 'Expand' : 'Collapse'}</span>
+            <IconComponent
+              name={isCollapsed ? "panel-right-open" : "panel-left-close"}
+              className="h-5 w-5"
+            />
+            <span className="hidden lg:inline">
+              {isCollapsed ? "Expand" : "Collapse"}
+            </span>
           </button>
 
           <Link href="/" className="flex items-center gap-2">
-            
-              {tenant.logo_url && (
-                <img src={tenant.logo_url}
-                  className="h-12 mr-4" alt="Tenant Logo"/>
-              )}
+            {tenant.logo_url && (
+              <img
+                src={tenant.logo_url}
+                className="h-12 mr-4"
+                alt="Tenant Logo"
+              />
+            )}
             <div className="leading-tight">
-              <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-200">{tenant.name}</p>
+              <p className="text-[13px] font-semibold text-slate-900 dark:text-slate-200">
+                {tenant.name}
+              </p>
             </div>
           </Link>
         </div>
@@ -106,7 +126,13 @@ const Navbar = ({ setSidebarOpen, isCollapsed, setIsCollapsed }: NavbarProps) =>
         </div>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/support"
+              className="inline-flex h-10 items-center rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+            >
+              Support
+            </Link>
           <IconButton label="Recent">
             <IconComponent name="clock" className="h-5 w-5" />
           </IconButton>

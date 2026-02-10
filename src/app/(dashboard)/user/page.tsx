@@ -45,7 +45,7 @@ interface User {
   updated_at: string;
   roles: Role[];
   permissions: any[]; // Assuming permissions array, adjust if needed
-  branches?: Branch[];
+  branches?: Branch[]|[];
 }
 
 interface PaginationLink {
@@ -87,7 +87,7 @@ const UserPage: React.FC = () => {
   const [branchSearchTerm, setBranchSearchTerm] = useState("");
   const [branchLoading, setBranchLoading] = useState(false);
   const [branchError, setBranchError] = useState<string | null>(null);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+  const [selectedAssignBranchIds, setSelectedAssignBranchIds] = useState<string[]>([]);
   const [showAssignBranchModal, setShowAssignBranchModal] = useState(false);
   const [assignBranchError, setAssignBranchError] = useState<string | null>(null);
   const [assigningBranches, setAssigningBranches] = useState(false);
@@ -140,6 +140,7 @@ const UserPage: React.FC = () => {
       console.error('Error fetching roles:', err);
     }
   };
+  
   const loadTenants = async () => {
     try {
       setTenantLoading(true);
@@ -154,11 +155,10 @@ const UserPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if(can('manage-users')){
+    if (can('manage-users') && roles.length === 0) {
       loadRoles();
     }
-    fetchBranchSelect().then((data) => setSelectBranches(Array.isArray(data) ? data : [])).catch(console.error);
-  }, []);
+  }, [me, roles.length]);
 
   useEffect(() => {
     if (!showAddModal || !isSuperAdmin || tenants.length) return;
@@ -251,12 +251,15 @@ const UserPage: React.FC = () => {
     setSelectedUser(user);
     setSelectedRole("");
     setShowAssignModal(true);
+    if (can("manage-users") && roles.length === 0) {
+      loadRoles();
+    }
   };
 
   const handleAssignBranch = (user: User) => {
-    const preselected = user.branches?.[0]?.id ?? "";
+    const preselected = user.branches?.map((branch) => branch.id) ?? [];
     setSelectedUser(user);
-    setSelectedBranchId(preselected);
+    setSelectedAssignBranchIds(preselected);
     setBranchSearchTerm("");
     setAssignBranchError(null);
     setShowAssignBranchModal(true);
@@ -281,12 +284,12 @@ const UserPage: React.FC = () => {
   };
 
   const handleAssignBranchSubmit = async () => {
-    if (!selectedUser || !selectedBranchId) return;
+    if (!selectedUser || selectedAssignBranchIds.length === 0) return;
 
     try {
       setAssigningBranches(true);
       setAssignBranchError(null);
-      await assignBranch(selectedUser.id, selectedBranchId);
+      await assignBranch(selectedUser.id, selectedAssignBranchIds);
       setShowAssignBranchModal(false);
       const response = await fetchUsers(pagination?.current_page || 1, perPage);
       setUsers(response.data);
@@ -384,6 +387,7 @@ const UserPage: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Phone</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Roles</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Branches</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-slate-300">Actions</th>
             </tr>
           </thead>
@@ -396,6 +400,9 @@ const UserPage: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-300">{user.phone}</td>
                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-300">
                   {user.roles.map(role => role.name).join(', ')}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-300">
+                  {(user.branches ?? []).map(b => b.name).join(', ')}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                   <IconButton onClick={() => {/* handle edit */ }} label="Edit">
@@ -603,7 +610,7 @@ const UserPage: React.FC = () => {
                 Assign Branch to {selectedUser?.name}
               </h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-slate-300">
-                Select a branch to assign.
+                Select one or more branches to assign.
               </p>
               {branchError && (
                 <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
@@ -636,10 +643,16 @@ const UserPage: React.FC = () => {
                       className="flex items-start gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       <input
-                        type="radio"
+                        type="checkbox"
                         name="branch-selection"
-                        checked={selectedBranchId === branch.id}
-                        onChange={() => setSelectedBranchId(branch.id)}
+                        checked={selectedAssignBranchIds.includes(branch.id)}
+                        onChange={() => {
+                          setSelectedAssignBranchIds((prev) =>
+                            prev.includes(branch.id)
+                              ? prev.filter((id) => id !== branch.id)
+                              : [...prev, branch.id]
+                          );
+                        }}
                         className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
                       />
                       <span className="flex flex-col">
@@ -660,7 +673,7 @@ const UserPage: React.FC = () => {
                 <button
                   onClick={handleAssignBranchSubmit}
                   className="w-full rounded-md bg-blue-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={assigningBranches || !selectedBranchId}
+                  disabled={assigningBranches || selectedAssignBranchIds.length === 0}
                 >
                   {assigningBranches ? "Assigning..." : "Assign Branch"}
                 </button>

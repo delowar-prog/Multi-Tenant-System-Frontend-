@@ -14,6 +14,7 @@ type IconName =
   | "panel-right-open"
   | "edit"
   | "delete"
+  | "support"
   | "sun"
   | "moon";
 
@@ -130,6 +131,14 @@ export default function IconComponent({ name, className }: IconProps) {
           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           <path d="M10 11v6" />
           <path d="M14 11v6" />
+        </svg>
+      );
+    case "support":
+      return (
+        <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
         </svg>
       );
     case "sun":
