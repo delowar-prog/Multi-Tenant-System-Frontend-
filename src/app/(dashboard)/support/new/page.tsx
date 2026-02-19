@@ -1,26 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { createSupportCategory } from "src/services/supportCategoryServices";
-
-const defaultSubjectOptions = ["Farmer Hold", "Wallet change", "General Query"];
-
+import { api } from "src/lib/api";
+import AttachmentUpload from "./attachment";
+type Category = {
+  id: number;
+  name: string;
+};
 export default function CreateTicketPage() {
-  const [subjectOptions, setSubjectOptions] = useState(defaultSubjectOptions);
-  const [category, setCategory] = useState('');
-  const [subject, setSubject] = useState(defaultSubjectOptions[0]);
-  const [message, setMessage] = useState("Please hold the farmer PB NO-10XXXXXX.");
+  const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subject, setSubject] = useState<string>("");
+  const [message, setMessage] = useState<string>("");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [categoryName, setCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [categoryError, setCategoryError] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
 
   const openCategoryModal = () => {
     setCategoryName(subject);
     setCategoryError("");
     setShowCategoryModal(true);
   };
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await api.get(`/select-support-categories`);
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const closeCategoryModal = () => {
     setShowCategoryModal(false);
@@ -35,30 +52,12 @@ export default function CreateTicketPage() {
       return;
     }
 
-    const existing = subjectOptions.find(
-      (option) => option.toLowerCase() === normalizedName.toLowerCase()
-    );
-
-    if (existing) {
-      setSubject(existing);
-      closeCategoryModal();
-      return;
-    }
-
     try {
       setIsAddingCategory(true);
       setCategoryError("");
       const response = await createSupportCategory({ name: normalizedName });
       const createdName =
         response?.data?.name ?? response?.name ?? normalizedName;
-
-      setSubjectOptions((prev) => {
-        const alreadyExists = prev.some(
-          (option) => option.toLowerCase() === String(createdName).toLowerCase()
-        );
-        if (alreadyExists) return prev;
-        return [...prev, String(createdName)];
-      });
       setSubject(String(createdName));
       closeCategoryModal();
     } catch (error) {
@@ -66,8 +65,8 @@ export default function CreateTicketPage() {
         typeof error === "object" &&
         error !== null &&
         "response" in error &&
-        typeof (error as { response?: { data?: { message?: string } } }).response
-          ?.data?.message === "string"
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
           ? (error as { response?: { data?: { message?: string } } }).response!
               .data!.message!
           : "Failed to add category. Please try again.";
@@ -77,13 +76,31 @@ export default function CreateTicketPage() {
     }
   };
 
+  const handleTicketSubmit = async () => {
+    const formData = new FormData();
+    formData.append("category_id", category);
+    formData.append("subject", subject);
+    formData.append("message", message);
+    files.forEach((file) => {
+      formData.append("attachments[]", file);
+    });
+
+    await api.post("/support-tickets", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  };
+
   return (
     <div className="p-6 bg-white rounded-lg shadow border border-gray-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-slate-100">Create Ticket</h1>
+        <h1 className="text-2xl font-semibold text-gray-800 dark:text-slate-100">
+          Create Ticket
+        </h1>
         <Link
           href="/support"
-          className="text-sm font-semibold text-white px-2 py-1 rounded bg-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300"
+          className="text-sm font-semibold text-white px-2 py-1 rounded bg-emerald-600 dark:text-white"
         >
           Back
         </Link>
@@ -99,9 +116,9 @@ export default function CreateTicketPage() {
             onChange={(e) => setCategory(e.target.value)}
             className="mt-2 w-64 mr-2 rounded-md border border-gray-300 bg-white px-3 py-2 mb-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
-            {subjectOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
+            {categories.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
               </option>
             ))}
           </select>
@@ -110,41 +127,37 @@ export default function CreateTicketPage() {
             onClick={openCategoryModal}
             className="inline-flex h-8 w-10 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
           >
-              +
+            +
           </button>
           <label className="block text-sm font-semibold text-gray-700 dark:text-slate-200 mt-2">
             Subject <span className="text-red-500">*</span>
           </label>
-          <select
+          <input
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSubject(e.target.value)
+            }
+            placeholder="Subject"
             className="mt-2 w-64 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
-            {subjectOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          ></input>
 
           <label className="mt-8 block text-sm font-semibold text-gray-700 dark:text-slate-200">
             Message <span className="text-red-500">*</span>
           </label>
           <textarea
             value={message}
+            placeholder="Your Message"
             onChange={(e) => setMessage(e.target.value)}
             rows={6}
             className="mt-2 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           />
+          <AttachmentUpload files={files} setFiles={setFiles} />
 
-          <div className="mt-4 flex items-center gap-3 text-sm font-semibold text-gray-700 dark:text-slate-200">
-            <span>add attachment</span>
-            <button className="inline-flex h-8 w-10 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-700">
-              +
-            </button>
-          </div>
-
-          <button className="mt-6 rounded-md bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+          <button
+            type="submit"
+            onClick={handleTicketSubmit}
+            className="cursor-pointer mt-6 rounded-md bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+          >
             Submit
           </button>
         </div>
@@ -167,10 +180,10 @@ export default function CreateTicketPage() {
             />
             <div className="mt-5 flex items-center gap-3">
               <button
-              type="button"
-              onClick={handleCategorySubmit}
-              disabled={isAddingCategory}
-              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                type="button"
+                onClick={handleCategorySubmit}
+                disabled={isAddingCategory}
+                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
                 {isAddingCategory ? "Submitting..." : "Submit"}
               </button>
@@ -184,7 +197,9 @@ export default function CreateTicketPage() {
               </button>
             </div>
             {categoryError && (
-              <p className="mt-3 text-sm text-red-500 dark:text-red-400">{categoryError}</p>
+              <p className="mt-3 text-sm text-red-500 dark:text-red-400">
+                {categoryError}
+              </p>
             )}
           </div>
         </div>
