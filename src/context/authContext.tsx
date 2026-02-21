@@ -73,6 +73,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [pathname, router]);
 
   const refreshMe = useCallback(async (withLoading: boolean = false) => {
+    if (typeof window !== "undefined") {
+      const token =
+        localStorage.getItem("token_impersonation") || localStorage.getItem("token");
+      if (!token) {
+        setMe(null);
+        if (withLoading) setLoading(false);
+        return;
+      }
+    }
+
     if (withLoading) setLoading(true);
     try {
       const res = await api.get<MeResponse>("/me");
