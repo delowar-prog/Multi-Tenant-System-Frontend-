@@ -568,7 +568,7 @@ export default function LandingPage() {
                       <Star key={index} className="h-4 w-4 fill-current" />
                     ))}
                   </div>
-                  <p className="mt-4 text-sm text-slate-600">"{testimonial.quote}"</p>
+                  <p className="mt-4 text-sm text-slate-600">&ldquo;{testimonial.quote}&rdquo;</p>
                   <div className="mt-5">
                     <p className={`${sora.className} text-sm font-semibold text-slate-900`}>{testimonial.name}</p>
                     <p className="text-xs text-slate-500">{testimonial.title}</p>

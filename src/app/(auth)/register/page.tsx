@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
 import { useAuth } from "src/context/authContext";
 import { register } from "src/services/authService";
 import { fetchLandingPlans, LandingPlanApi } from "src/services/planServices";
 
-export default function RegisterForm() {
+function RegisterForm() {
   const { setUser } = useAuth();
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -316,5 +316,13 @@ export default function RegisterForm() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="text-sm text-slate-500">Loading registration...</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

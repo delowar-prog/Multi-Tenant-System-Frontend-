@@ -13,6 +13,7 @@ type DashboardLayoutProps = {
 
 type OpenState = {
   userMgmt: boolean;
+  config: boolean;
   institutions: boolean;
   academics: boolean;
   documents: boolean;
@@ -26,6 +27,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const [open, setOpen] = useState<OpenState>({
     userMgmt: false,
+    config: false,
     institutions: true,
     academics: false,
     documents: false,

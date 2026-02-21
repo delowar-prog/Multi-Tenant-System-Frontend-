@@ -32,7 +32,7 @@ const Navbar = ({
   isCollapsed,
   setIsCollapsed,
 }: NavbarProps) => {
-  const [tenant, setTenant] = useState<Tenant>({});
+  const [tenant, setTenant] = useState<Tenant>({ id: "", name: "" });
   // Define toggleCollapse
   const toggleCollapse = () => {
     if (setIsCollapsed) setIsCollapsed(!isCollapsed);

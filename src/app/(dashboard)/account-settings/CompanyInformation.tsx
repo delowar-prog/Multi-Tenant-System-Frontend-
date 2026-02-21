@@ -16,7 +16,7 @@ interface Tenant {
 }
 
 const CompanyInformation = () => {
-const [tenant, setTenant] = useState<Tenant>({});
+const [tenant, setTenant] = useState<Tenant>({ id: '', name: '' });
 const [formData, setFormData] = useState({
   name: '',
   primary_color: '',
